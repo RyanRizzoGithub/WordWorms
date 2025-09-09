@@ -804,6 +804,7 @@ canvas.addEventListener("mousemove", (e) => {
         if (mouseHold && !loading) {
             
             // Make sure user mouse is inside the canvas horizontally
+            let clickX = e.clientX - (window.innerWidth / 2);
             if (e.clientX - (window.innerWidth / 2) >= -120 && e.clientX - (window.innerWidth / 2) <= 120) {
 
                 // Make sure user mouse is inside the canvas vertically
@@ -837,6 +838,7 @@ canvas.addEventListener("mousemove", (e) => {
             selectLetter(e.clientX, e.clientY);
             draw();
             hovering = false;
+            hover.forEach(row => row.fill(false));
         }
     }
 });
@@ -850,7 +852,8 @@ canvas.addEventListener("mousemove", (e) => {
  */
 canvas.addEventListener("mousedown", (e) => { 
     if (!loading) {
-        if (e.clientY > 110 && e.clientY < 455 && e.clientX > 320 && e.clientX < 570) {
+        let clickX = e.clientX - (window.innerWidth / 2);
+        if (e.clientY > 110 && e.clientY < 455 && clickX > -120 && clickX < 120) {
             // Set mouseHold to true while user has mouse clicked inside the canvas
             mouseHold = true; 
             
@@ -874,7 +877,8 @@ canvas.addEventListener("mousedown", (e) => {
  */
 canvas.addEventListener("mouseup", (e) => { 
     if (!loading) {
-        if (e.clientY > 110 && e.clientY < 455 && e.clientX > 320 && e.clientX < 570) {
+        let clickX = e.clientX - (window.innerWidth / 2);
+        if (e.clientY > 110 && e.clientY < 455 && clickX > -120 && clickX < 120) {
             if (!puzzleSelecting) {
                 // Check if the users selection is a valid word
                 let wordFound = checkWord();
