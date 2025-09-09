@@ -16,6 +16,7 @@ let words           = new Array(7);
 let clues           = new Array(7);
 let path            = new Array(7);
 let hints           = new Array(7);
+let hover           = new Array(7);
 let backtracker     = new Array(7);
 let finishedPuzzles = new Array(7);
 
@@ -35,11 +36,12 @@ let currentHintStr  = "";
 let mouseHold       = false;
 let wrongLocation   = false;
 let gameOver        = false;
-let puzzleSelecting = true;
 let selectionClick  = false;
 let countdownActive = false;
 let timerActive     = false;  
 let paused          = false;
+let hovering        = false;
+let puzzleSelecting = true;
 
 let headRoom        = 55;
 let currentHintNum  = 1;
@@ -61,6 +63,7 @@ let help = ["Hints for each word you must find can be found here using the left 
             "A timer will start once a level opens, use it to race your friends",
             "Use the pause & play buttons in order to start & stop the game anytime"];
 
+let hoverColors = ["#c73336","#c25b23","#c27418","#c7a13f","#729657","#36856f","#455e72"];
 let colors   = ["#f94144","#f3722c","#f8961e","#f9c74f","#90be6d","#43aa8b","#577590"];
 let puzzles1 = ["Car-Manufacturers-01.txt", "Sports-01.txt" , "Foods-01.txt", "Bugs-01.txt", "Countries-01.txt"];
 let puzzles2 = ["Vegetables-01.txt", "Drinks-01.txt", "Music-Genres-01.txt", "Animals-01.txt", "Fruits-01.txt"];
@@ -102,6 +105,7 @@ function populateGrid(file) {
             let keyRow = new Array(5);
             let pathRow = new Array(5);
             let backtrackRow = new Array(5);
+            let hoverRow = new Array(5);
 
             // Initialie each element in the row
             for (let j=0; j < gridRow.length; j++) {
@@ -111,6 +115,7 @@ function populateGrid(file) {
                 keyRow[j] = lines[15 + i].split(' ')[j];
                 pathRow[j] = null;
                 backtrackRow[j] = 0;
+                hoverRow[j] = false;
             }
 
             // Insert the newly created row into the game structure
@@ -120,6 +125,7 @@ function populateGrid(file) {
             key[i] = keyRow;
             path[i] = pathRow;
             backtracker[i] = backtrackRow;
+            hover[i] = hoverRow;
         }
 
         // Add each word to find into the words array
@@ -131,6 +137,7 @@ function populateGrid(file) {
         for (let i=0; i<7; i++) {
             hints[i] = lines[22 + i];
         }
+        console.log(hover);
 
         // Determine the quantity of words, then put each word into an array
         wordCount = lines[7];
@@ -229,7 +236,8 @@ function draw() {
             ctx.roundRect(x - 20 + offset - zoom / 2, y + headRoom - zoom / 2, 40 + zoom, 40 + zoom, 8);
 
             if (puzzleSelecting) {
-                ctx.fillStyle = colors[i];
+                if (hover[i][j]) ctx.fillStyle = hoverColors[i];
+                else ctx.fillStyle = colors[i];
                 ctx.stroke();
                 ctx.fill();
                 ctx.fillStyle = 'white';
@@ -251,6 +259,12 @@ function draw() {
                 ctx.stroke();
                 ctx.fill();
                 ctx.fillStyle = 'white';
+                ctx.fillText(grid[i][j], x + offset, y + 20 + headRoom);
+            } else if (hover[i][j]) {
+                ctx.fillStyle = '#D3D3D3';
+                ctx.stroke();
+                ctx.fill();
+                ctx.fillStyle = 'black';
                 ctx.fillText(grid[i][j], x + offset, y + 20 + headRoom);
             } else {
                 ctx.fillStyle = 'white';
@@ -343,11 +357,10 @@ function checkWord() {
                             let hintParagraph = document.getElementById("hint-p");
                             hintParagraph.style.textDecoration = "line-through";
                         }
-                    
-                    // If we found the right word, but the wrong locating, set this flag
-                    } else {
-                        wrongLocation = true;
-                    }
+                }
+                // If we found the right word, but the wrong locating, set this flag
+                } else {
+                    wrongLocation = true;
                 }
             }
         }
@@ -391,9 +404,19 @@ function selectLetter(xPos, yPos) {
     // Calculate the row
     let row = Math.floor(y / 50);
 
+    // If the user is just hovering and not clicking update the hover grid
+    if (hovering) {
+        if (row >= 0 && row <= 6 && column >= 0 && column <= 4) {
+            hover.forEach(row => row.fill(false));
+            hover[row][column] = true;
+        }
+        return;
+    }
 
     // If we are in puzzle selector mode, change the logic to handle puzzle selection
     if (puzzleSelecting) {
+        console.log(xPos);
+        console.log(yPos);
         // Save the row and column of the puzzle we are currently playing
         currentPuzzleX = column;
         currentPuzzleY = row;
@@ -410,7 +433,7 @@ function selectLetter(xPos, yPos) {
         return;
     }
 
-
+    
     // Check if the selected node is already completed
     if (found[row][column]) { clearSelection(); return; }
 
@@ -809,6 +832,11 @@ canvas.addEventListener("mousemove", (e) => {
             } else { mouseHold = false; clearSelection(); }
         // Clear selection if user moves above or below the canvas
         } else { mouseHold = false; clearSelection(); }
+    } else {
+        hovering = true;
+        selectLetter(e.clientX, e.clientY);
+        draw();
+        hovering = false;
     }
 });
 
@@ -820,7 +848,7 @@ canvas.addEventListener("mousemove", (e) => {
  * Updates the canvas display if the game is not in puzzle selection mode.
  */
 canvas.addEventListener("mousedown", (e) => { 
-    if (e.clientY < 455) {
+    if (e.clientY > 110 && e.clientY < 455 && e.clientX > 320 && e.clientX < 570) {
         // Set mouseHold to true while user has mouse clicked inside the canvas
         mouseHold = true; 
         
@@ -842,7 +870,7 @@ canvas.addEventListener("mousedown", (e) => {
  * Updates the game state and resets mouse tracking after the selection is completed.
  */
 canvas.addEventListener("mouseup", (e) => { 
-    if (e.clientY < 455) {
+    if (e.clientY > 110 && e.clientY < 455 && e.clientX > 320 && e.clientX < 570) {
         if (!puzzleSelecting) {
             // Check if the users selection is a valid word
             let wordFound = checkWord();
