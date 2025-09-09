@@ -53,6 +53,10 @@ Ensure all puzzle files are in the /puzzles/ folder
 Open index.html in a web browser
 
 Select a puzzle and start playing!
+
+Or
+
+Go to this link: *Comming Soon*
 <br><br>
 
 
