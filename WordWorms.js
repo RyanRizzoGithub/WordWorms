@@ -20,8 +20,8 @@ let hover           = new Array(7);
 let backtracker     = new Array(7);
 let finishedPuzzles = new Array(7);
 
-let prevX           = null;
-let prevY           = null;
+let prevX           = 0;
+let prevY           = 0;
 let startTime       = null; 
 let timerInterval   = null; 
 let puzzleFile      = null;
@@ -42,6 +42,7 @@ let timerActive     = false;
 let paused          = false;
 let hovering        = false;
 let puzzleSelecting = true;
+let loading         = true;
 
 let headRoom        = 55;
 let currentHintNum  = 1;
@@ -137,7 +138,6 @@ function populateGrid(file) {
         for (let i=0; i<7; i++) {
             hints[i] = lines[22 + i];
         }
-        console.log(hover);
 
         // Determine the quantity of words, then put each word into an array
         wordCount = lines[7];
@@ -158,6 +158,7 @@ function populateGrid(file) {
         hintBubble.innerHTML = "<p id='hint-p' style='width: 200px;'>" + currentHintStr + "</p>";
         puzzleFile = file;
         draw();
+        loading = false;
     })
     .catch((e) => console.error(e));
 }
@@ -415,8 +416,6 @@ function selectLetter(xPos, yPos) {
 
     // If we are in puzzle selector mode, change the logic to handle puzzle selection
     if (puzzleSelecting) {
-        console.log(xPos);
-        console.log(yPos);
         // Save the row and column of the puzzle we are currently playing
         currentPuzzleX = column;
         currentPuzzleY = row;
@@ -800,43 +799,45 @@ function puzzleSelector() {
  * Clears the selection if the cursor moves outside the playable area.
  */
 canvas.addEventListener("mousemove", (e) => {
-    // Check if the mouse is being held down
-    if (mouseHold) {
-        
-        // Make sure user mouse is inside the canvas horizontally
-        if (e.clientX - (window.innerWidth / 2) >= -120 && e.clientX - (window.innerWidth / 2) <= 120) {
+    if (!loading) {
+        // Check if the mouse is being held down
+        if (mouseHold && !loading) {
+            
+            // Make sure user mouse is inside the canvas horizontally
+            if (e.clientX - (window.innerWidth / 2) >= -120 && e.clientX - (window.innerWidth / 2) <= 120) {
 
-            // Make sure user mouse is inside the canvas vertically
-            if (e.clientY >= 55 + headRoom && e.clientY < 405 + headRoom) {
-                let x = e.clientX - (window.innerWidth / 2);
-                let y = e.clientY - (55 + headRoom);
+                // Make sure user mouse is inside the canvas vertically
+                if (e.clientY >= 55 + headRoom && e.clientY < 405 + headRoom) {
+                    let x = e.clientX - (window.innerWidth / 2);
+                    let y = e.clientY - (55 + headRoom);
 
-                // Calculate the column
-                let column = Math.floor((x + 120) / 48);
+                    // Calculate the column
+                    let column = Math.floor((x + 120) / 48);
 
-                // Calculate the row
-                let row = Math.floor(y / 50);
+                    // Calculate the row
+                    let row = Math.floor(y / 50);
 
-                // Check if we have moved to a different node
-                if (column != prevX || row != prevY) {
-                    selectLetter(e.clientX, e.clientY);
+                    // Check if we have moved to a different node
+                    if (column != prevX || row != prevY) {
+                        selectLetter(e.clientX, e.clientY);
 
-                    if (!puzzleSelecting) {
-                        let letter = grid[prevY][prevX];
-                        currentWord = currentWord + letter;
-                        currentPath = currentPath + key[prevY][prevX];
-                        draw();
+                        if (!puzzleSelecting) {
+                            let letter = grid[prevY][prevX];
+                            currentWord = currentWord + letter;
+                            currentPath = currentPath + key[prevY][prevX];
+                            draw();
+                        }
                     }
-                }
-            // Clear selection if user moves to the side of the canvas
+                // Clear selection if user moves to the side of the canvas
+                } else { mouseHold = false; clearSelection(); }
+            // Clear selection if user moves above or below the canvas
             } else { mouseHold = false; clearSelection(); }
-        // Clear selection if user moves above or below the canvas
-        } else { mouseHold = false; clearSelection(); }
-    } else {
-        hovering = true;
-        selectLetter(e.clientX, e.clientY);
-        draw();
-        hovering = false;
+        } else {
+            hovering = true;
+            selectLetter(e.clientX, e.clientY);
+            draw();
+            hovering = false;
+        }
     }
 });
 
@@ -848,17 +849,19 @@ canvas.addEventListener("mousemove", (e) => {
  * Updates the canvas display if the game is not in puzzle selection mode.
  */
 canvas.addEventListener("mousedown", (e) => { 
-    if (e.clientY > 110 && e.clientY < 455 && e.clientX > 320 && e.clientX < 570) {
-        // Set mouseHold to true while user has mouse clicked inside the canvas
-        mouseHold = true; 
-        
-        // Add the very first selected letter immediately
-        selectLetter(e.clientX, e.clientY);
+    if (!loading) {
+        if (e.clientY > 110 && e.clientY < 455 && e.clientX > 320 && e.clientX < 570) {
+            // Set mouseHold to true while user has mouse clicked inside the canvas
+            mouseHold = true; 
+            
+            // Add the very first selected letter immediately
+            selectLetter(e.clientX, e.clientY);
 
-        if (!puzzleSelecting) {
-            currentWord = grid[prevY][prevX];
-            currentPath = key[prevY][prevX];
-            draw();
+            if (!puzzleSelecting) {
+                currentWord = grid[prevY][prevX];
+                currentPath = key[prevY][prevX];
+                draw();
+            }
         }
     }
 });
@@ -870,28 +873,30 @@ canvas.addEventListener("mousedown", (e) => {
  * Updates the game state and resets mouse tracking after the selection is completed.
  */
 canvas.addEventListener("mouseup", (e) => { 
-    if (e.clientY > 110 && e.clientY < 455 && e.clientX > 320 && e.clientX < 570) {
-        if (!puzzleSelecting) {
-            // Check if the users selection is a valid word
-            let wordFound = checkWord();
-            if (!wordFound) { 
-                for (let i=0; i < selected.length; i++) {
-                    for (let j=0; j < selected[i].length; j++) {
-                        if (selected[i][j]) {
-                            path[i][j] = null;
+    if (!loading) {
+        if (e.clientY > 110 && e.clientY < 455 && e.clientX > 320 && e.clientX < 570) {
+            if (!puzzleSelecting) {
+                // Check if the users selection is a valid word
+                let wordFound = checkWord();
+                if (!wordFound) { 
+                    for (let i=0; i < selected.length; i++) {
+                        for (let j=0; j < selected[i].length; j++) {
+                            if (selected[i][j]) {
+                                path[i][j] = null;
+                            }
                         }
                     }
                 }
+            } else {
+                puzzleSelecting = false;
             }
-        } else {
-            puzzleSelecting = false;
+
+            // Clear the users selected characters
+            previousWord = currentWord;
+            clearSelection();
+
+            // Set mousehold back to false
+            mouseHold = false; 
         }
-
-        // Clear the users selected characters
-        previousWord = currentWord;
-        clearSelection();
-
-        // Set mousehold back to false
-        mouseHold = false; 
     }
 });
