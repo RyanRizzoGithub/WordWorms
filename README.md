@@ -4,6 +4,8 @@ Word Worms is an interactive word-search style puzzle game built using JavaScrip
 Players solve puzzles by dragging across adjacent letters to form words based on provided hints.
 Each puzzle contains exactly 7 hidden words that fill the grid completely.
 <br><br>
+<img width="200" height="auto" alt="demo1" src="https://github.com/user-attachments/assets/975d1352-3733-4aae-9636-67009abee8a5" />
+<br>
 
 # 🎮 Gameplay
 
@@ -13,6 +15,8 @@ Each puzzle contains exactly 7 hidden words that fill the grid completely.
 - Each puzzle has 7 words to find, and hints are available to guide you.
 - Words can be mislocated (correct word, wrong position), which will trigger a unique feedback animation.
 - The game ends when all words are found.
+<br><br>
+<img width="200" height="auto" alt="demo3" src="https://github.com/user-attachments/assets/57ce6031-d516-40cc-a373-91d178320033" />
 <br>
 
 # ✨ Features
