@@ -337,52 +337,56 @@ function drawPath(i, j, color) {
  * Returns a boolean indicating whether a valid word was found.  
  */
 function checkWord() {
-    // Initialize boolean to track word accuracy
     let foundWord = false;
-    // Check if the user selected exists in our word bank, and that the correct number of characters are selected
-    if (currentWord == words[currentPath[0] - 1] && currentPath.length == words[currentPath[0] - 1].length) {
-        
-        // Iterate over each row of the key grid
-        for (let i=0; i < key.length; i++) {
-            // Iterate over each column of the key grid
-            for (let j=0; j < key[i].length; j++) {
-                // Check if all characters are the expected instances of that character
+    wrongLocation = false; // reset each check
+
+    const targetWord = words[currentPath[0] - 1];
+
+    // Check length and dictionary match
+    if (currentWord === targetWord && currentPath.length === targetWord.length) {
+        // Scan the grid for a placement of this word
+        let placedCorrectly = false;
+
+        for (let i = 0; i < key.length; i++) {
+            for (let j = 0; j < key[i].length; j++) {
                 if (key[i][j] == currentPath[0]) {
-                    // Check if every character is a part of the expected word
-                    if (currentPath.split('').every(element => element === currentPath.split('')[0])) {
+                    // If the word is in the correct location, mark it
+                    if (currentPath.split('').every(ch => ch === currentPath[0])) {
                         found[i][j] = currentPath[0];
                         foundWord = true;
+                        placedCorrectly = true;
 
-                        // Check if the current hint is the word we just solved
                         if (currentHintNum == key[i][j]) {
-                            let hintParagraph = document.getElementById("hint-p");
-                            hintParagraph.style.textDecoration = "line-through";
+                            document.getElementById("hint-p").style.textDecoration = "line-through";
                         }
-                }
-                // If we found the right word, but the wrong locating, set this flag
-                } else {
-                    wrongLocation = true;
+                    }
                 }
             }
         }
+
+        // Word exists, but no correct placement was marked
+        if (!placedCorrectly) {
+            wrongLocation = true;
+        }
     }
 
-    // Begin the correct animatiion (word is correct or incorrect)
-    if (foundWord) { 
-        wordsFound = wordsFound + 1; 
-        if (wordsFound == wordCount) { 
-            gameOver = true; 
+    // Handle animations and scoring
+    if (foundWord) {
+        wordsFound++;
+        if (wordsFound == wordCount) {
+            gameOver = true;
             stopTimer();
             finishedPuzzles[currentPuzzleY][currentPuzzleX] = true;
-        } else { animateCorrect(); }
+        } else {
+            animateCorrect();
+        }
+    } else if (wrongLocation) {
+        animateLocation();
+    } else if (!selectionClick) {
+        animateIncorrect();
     }
 
-    // Begin the correct animation
-    else if (wrongLocation) { animateLocation(); }
-    else if (!selectionClick) { animateIncorrect();}
     selectionClick = false;
-
-    // Return the word that we found
     return foundWord;
 }
 
